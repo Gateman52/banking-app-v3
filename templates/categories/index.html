@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Categories</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }
+        .header { background: #667eea; color: white; padding: 20px; margin: -20px -20px 20px -20px; border-radius: 10px 10px 0 0; }
+        .nav { margin-bottom: 20px; }
+        .nav a { padding: 10px 15px; background: #667eea; color: white; text-decoration: none; margin-right: 10px; border-radius: 5px; }
+        .categories-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .category-section { background: #f8f9fa; padding: 20px; border-radius: 10px; }
+        .category-section h3 { margin-top: 0; padding-bottom: 10px; border-bottom: 2px solid #dee2e6; }
+        .income-section h3 { color: #28a745; border-color: #28a745; }
+        .expense-section h3 { color: #dc3545; border-color: #dc3545; }
+        .category-item { background: white; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #667eea; }
+        .income-item { border-left-color: #28a745; }
+        .expense-item { border-left-color: #dc3545; }
+        .category-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .category-name { font-weight: bold; font-size: 16px; }
+        .category-stats { display: flex; gap: 15px; font-size: 14px; color: #666; }
+        .category-color { width: 20px; height: 20px; border-radius: 50%; display: inline-block; margin-right: 10px; }
+        .category-actions { margin-top: 10px; }
+        .category-actions a { padding: 5px 10px; background: #667eea; color: white; text-decoration: none; border-radius: 3px; font-size: 12px; margin-right: 5px; }
+        .add-category-btn { display: inline-block; background: #28a745; color: white; padding: 15px 25px; text-decoration: none; border-radius: 5px; margin-bottom: 20px; }
+        .summary { background: #e9ecef; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📁 Categories</h1>
+            <p>Manage your transaction categories</p>
+        </div>
+
+        <div class="nav">
+            <a href="/">Dashboard</a>
+            <a href="/users">Users</a>
+            <a href="/add-user">Add User</a>
+            <a href="/transactions">Transactions</a>
+            <a href="/categories">Categories</a>
+        </div>
+
+        <div class="summary">
+            <strong>{{ total_categories }}</strong> categories total •
+            <strong>{{ income_categories|length }}</strong> income •
+            <strong>{{ expense_categories|length }}</strong> expense
+        </div>
+
+        <a href="/categories/add" class="add-category-btn">➕ Add New Category</a>
+
+        <div class="categories-grid">
+            <!-- Income Categories -->
+            <div class="category-section income-section">
+                <h3>💰 Income Categories</h3>
+                {% if income_categories %}
+                    {% for category in income_categories %}
+                    <div class="category-item income-item">
+                        <div class="category-header">
+                            <div>
+                                <span class="category-color" style="background-color: {{ category.color or '#28a745' }};"></span>
+                                <span class="category-name">{{ category.name }}</span>
+                            </div>
+                            <div class="category-stats">
+                                <span>{{ category.transaction_count }} transactions</span>
+                                <span class="amount-positive">{{ category.total_amount | currency }}</span>
+                            </div>
+                        </div>
+                        {% if category.description %}
+                        <div style="color: #666; font-size: 14px; margin: 5px 0;">{{ category.description }}</div>
+                        {% endif %}
+                        <div class="category-actions">
+                            <a href="/categories/{{ category.id }}">View</a>
+                            <a href="/categories/{{ category.id }}/edit">Edit</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="color: #666; font-style: italic;">No income categories yet.</p>
+                {% endif %}
+            </div>
+
+            <!-- Expense Categories -->
+            <div class="category-section expense-section">
+                <h3>💸 Expense Categories</h3>
+                {% if expense_categories %}
+                    {% for category in expense_categories %}
+                    <div class="category-item expense-item">
+                        <div class="category-header">
+                            <div>
+                                <span class="category-color" style="background-color: {{ category.color or '#dc3545' }};"></span>
+                                <span class="category-name">{{ category.name }}</span>
+                            </div>
+                            <div class="category-stats">
+                                <span>{{ category.transaction_count }} transactions</span>
+                                <span class="amount-negative">{{ category.total_amount | currency }}</span>
+                            </div>
+                        </div>
+                        {% if category.description %}
+                        <div style="color: #666; font-size: 14px; margin: 5px 0;">{{ category.description }}</div>
+                        {% endif %}
+                        <div class="category-actions">
+                            <a href="/categories/{{ category.id }}">View</a>
+                            <a href="/categories/{{ category.id }}/edit">Edit</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="color: #666; font-style: italic;">No expense categories yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .amount-positive { color: #28a745; font-weight: bold; }
+        .amount-negative { color: #dc3545; font-weight: bold; }
+    </style>
+</body>
+</html>

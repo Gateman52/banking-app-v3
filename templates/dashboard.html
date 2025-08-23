@@ -1,0 +1,511 @@
+<!-- templates/dashboard.html - FIXED VERSION -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banking Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; line-height: 1.6; }
+
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .header p { opacity: 0.9; font-size: 1.1rem; }
+
+        .container { max-width: 1400px; margin: 0 auto; padding: 2rem 1rem; }
+
+        .nav { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+        .nav a {
+            padding: 0.75rem 1.5rem;
+            background: white;
+            color: #667eea;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .nav a:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .nav a.active { background: #667eea; color: white; }
+
+        .balance-projection {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+        }
+
+        .projection-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .projection-card {
+            background: rgba(255,255,255,0.1);
+            padding: 1.5rem;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            text-align: center;
+        }
+
+        .projection-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .projection-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .accounts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .account-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border-left: 5px solid #667eea;
+        }
+
+        .account-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .account-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .account-type {
+            background: #ecf0f1;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            text-transform: capitalize;
+        }
+
+        .balance-display {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #27ae60;
+            margin: 1rem 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .content-section {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .content-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .content-card h3 {
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            color: #2c3e50;
+            font-size: 1.3rem;
+        }
+
+        .transaction-list {
+            list-style: none;
+        }
+
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .transaction-item:last-child {
+            border-bottom: none;
+        }
+
+        .transaction-info {
+            flex: 1;
+        }
+
+        .transaction-desc {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.25rem;
+        }
+
+        .transaction-meta {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+        }
+
+        .transaction-amount {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .amount-positive { color: #27ae60; }
+        .amount-negative { color: #e74c3c; }
+
+        .category-tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-left: 0.5rem;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-info {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        @media (max-width: 768px) {
+            .content-section {
+                grid-template-columns: 1fr;
+            }
+
+            .projection-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+
+        .flash {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .flash.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .flash.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1>🏦 Your Banking Dashboard</h1>
+            <p>Manage your finances with confidence and forward planning</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="flash success">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Navigation -->
+        <div class="nav">
+            <a href="{{ url_for('dashboard') }}" class="active">Dashboard</a>
+            <a href="{{ url_for('users') }}">Users & Accounts</a>
+            <a href="/transactions">Transactions</a>
+            <a href="/categories">Categories</a>
+            <a href="/open-banking">Open Banking</a>
+            <a href="{{ url_for('add_user') }}">Add User</a>
+        </div>
+
+        <!-- Balance Projection Card -->
+        {% if projected_balance %}
+        <div class="balance-projection">
+            <h2>📈 2-Week Balance Projection</h2>
+            <p>Based on your recurring transaction patterns and current balance</p>
+
+            <div class="projection-grid">
+                <div class="projection-card">
+                    <div class="projection-number">{{ projected_balance.current_balance | currency }}</div>
+                    <div class="projection-label">Current Balance</div>
+                </div>
+                <div class="projection-card">
+                    <div class="projection-number {% if projected_balance.projected_change > 0 %}amount-positive{% else %}amount-negative{% endif %}">
+                        {% if projected_balance.projected_change > 0 %}+{% endif %}{{ projected_balance.projected_change | currency }}
+                    </div>
+                    <div class="projection-label">Projected Change</div>
+                </div>
+                <div class="projection-card">
+                    <div class="projection-number">{{ projected_balance.projected_balance | currency }}</div>
+                    <div class="projection-label">Projected Balance</div>
+                </div>
+                <div class="projection-card">
+                    <div class="projection-number">{{ projected_balance.projection_date | date_uk }}</div>
+                    <div class="projection-label">Projection Date</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Account Cards -->
+        {% if accounts %}
+        <div class="accounts-grid">
+            {% for account in accounts %}
+            <div class="account-card">
+                <div class="account-header">
+                    <div>
+                        <div class="account-name">{{ account.account_name }}</div>
+                        <div class="account-type">{{ account.account_type }}</div>
+                    </div>
+                    {% if account.user %}
+                    <div style="text-align: right;">
+                        <div style="font-weight: 600;">{{ account.user.full_name }}</div>
+                        <div style="font-size: 0.85rem; color: #7f8c8d;">{{ account.user.email }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="balance-display">{{ account.live_balance | currency }}</div>
+
+                {% set opening_balance = account.opening_balance | float %}
+                {% set current_balance = account.live_balance | float %}
+                {% set balance_change = current_balance - opening_balance %}
+
+                {% if balance_change != 0 %}
+                <div style="font-size: 0.9rem; color: #7f8c8d;">
+                    Opening: {{ opening_balance | currency }} |
+                    Change: <span class="{% if balance_change > 0 %}amount-positive{% else %}amount-negative{% endif %}">
+                        {% if balance_change > 0 %}+{% endif %}{{ balance_change | currency }}
+                    </span>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Statistics Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ total_transactions }}</div>
+                <div class="stat-label">Total Transactions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ accounts|length }}</div>
+                <div class="stat-label">Active Accounts</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ total_balance | currency }}</div>
+                <div class="stat-label">Total Balance</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ category_stats|length }}</div>
+                <div class="stat-label">Categories Used</div>
+            </div>
+        </div>
+
+        <!-- Main Content Section -->
+        <div class="content-section">
+            <!-- Recent Transactions -->
+            <div class="content-card">
+                <h3>📋 Recent Transactions</h3>
+
+                {% if recent_transactions %}
+                <ul class="transaction-list">
+                    {% for tx in recent_transactions %}
+                    <li class="transaction-item">
+                        <div class="transaction-info">
+                            <div class="transaction-desc">
+                                {{ tx.description[:50] }}{% if tx.description|length > 50 %}...{% endif %}
+                            </div>
+                            <div class="transaction-meta">
+                                {{ tx.date | date_uk }} •
+                                {% if tx.source %}{{ tx.source.name }}{% else %}Unknown Source{% endif %}
+                                {% if tx.category %}
+                                    <span class="category-tag" style="background-color: {{ tx.category.color }}20; color: {{ tx.category.color }};">
+                                        {{ tx.category.name }}
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="transaction-amount {% if tx.amount > 0 %}amount-positive{% else %}amount-negative{% endif %}">
+                            {{ tx.amount | currency }}
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+
+                <div class="quick-actions">
+                    <a href="/transactions" class="btn btn-primary">
+                        📊 View All Transactions
+                    </a>
+                    <a href="/transactions/add" class="btn btn-success">
+                        ➕ Add Transaction
+                    </a>
+                </div>
+                {% else %}
+                <p>No transactions yet. <a href="{{ url_for('add_user') }}">Add a user</a> to get started!</p>
+                {% endif %}
+            </div>
+
+            <!-- Category Breakdown -->
+            <div class="content-card">
+                <h3>📁 Category Breakdown</h3>
+
+                {% if category_stats %}
+                <ul class="transaction-list">
+                    {% for name, color, total, count in category_stats[:8] %}
+                    <li class="transaction-item">
+                        <div class="transaction-info">
+                            <div class="transaction-desc">{{ name }}</div>
+                            <div class="transaction-meta">{{ count }} transactions</div>
+                        </div>
+                        <div class="transaction-amount">
+                            <span style="color: {{ color or '#667eea' }};">{{ total | currency }}</span>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+
+                <div class="quick-actions">
+                    <a href="/categories" class="btn btn-info">
+                        📁 Manage Categories
+                    </a>
+                    <a href="/categories/add" class="btn btn-success">
+                        ➕ Add Category
+                    </a>
+                </div>
+                {% else %}
+                <p>No categorized transactions yet.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Actions Bar -->
+        <div class="content-card" style="margin-top: 2rem;">
+            <h3>⚡ Quick Actions</h3>
+            <div class="quick-actions">
+                <a href="{{ url_for('add_user') }}" class="btn btn-success">
+                    👤 Add New User
+                </a>
+                <a href="/transactions/add" class="btn btn-primary">
+                    💰 Add Transaction
+                </a>
+                <a href="/categories/add" class="btn btn-info">
+                    📁 Create Category
+                </a>
+                <a href="/open-banking/connect" class="btn btn-primary">
+                    🏦 Connect Bank Account
+                </a>
+                <a href="/categories/bulk-categorize" class="btn btn-info">
+                    🤖 Auto-Categorize
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

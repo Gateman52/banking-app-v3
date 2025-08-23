@@ -1,0 +1,140 @@
+<!-- templates/view_category.html - Category details -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ category.name }} - Category Details</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }
+        .header { background: #667eea; color: white; padding: 20px; margin: -20px -20px 20px -20px; border-radius: 10px 10px 0 0; }
+        .nav { margin-bottom: 20px; }
+        .nav a { padding: 10px 15px; background: #667eea; color: white; text-decoration: none; margin-right: 10px; border-radius: 5px; }
+        .category-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; }
+        .category-info h2 { margin: 0; display: flex; align-items: center; }
+        .category-color { width: 30px; height: 30px; border-radius: 50%; margin-right: 15px; }
+        .category-type { padding: 5px 15px; border-radius: 20px; color: white; font-size: 12px; text-transform: uppercase; }
+        .income-type { background: #28a745; }
+        .expense-type { background: #dc3545; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
+        .stat-card { background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center; }
+        .stat-number { font-size: 24px; font-weight: bold; color: #667eea; }
+        .transaction { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
+        .tx-amount { font-weight: bold; }
+        .amount-positive { color: #28a745; }
+        .amount-negative { color: #dc3545; }
+        .actions { display: flex; gap: 10px; }
+        .btn { padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .btn-danger { background: #dc3545; color: white; }
+        .pagination { text-align: center; margin-top: 20px; }
+        .pagination a { padding: 8px 12px; margin: 0 2px; background: #667eea; color: white; text-decoration: none; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📁 Category Details</h1>
+            <p>{{ category.name }} transactions and statistics</p>
+        </div>
+
+        <div class="nav">
+            <a href="/">Dashboard</a>
+            <a href="/categories">← Back to Categories</a>
+            <a href="/transactions">Transactions</a>
+        </div>
+
+        <div class="category-header">
+            <div class="category-info">
+                <h2>
+                    <span class="category-color" style="background-color: {{ category.color or '#667eea' }};"></span>
+                    {{ category.name }}
+                    <span class="category-type {{ 'income-type' if category.type == 'income' else 'expense-type' }}">
+                        {{ category.type }}
+                    </span>
+                </h2>
+                {% if category.description %}
+                <p style="margin: 10px 0 0 45px; color: #666;">{{ category.description }}</p>
+                {% endif %}
+            </div>
+
+            <div class="actions">
+                <a href="/categories/{{ category.id }}/edit" class="btn btn-warning">✏️ Edit</a>
+                {% if stats.transaction_count == 0 %}
+                <form method="POST" action="/categories/{{ category.id }}/delete" style="display: inline;"
+                      onsubmit="return confirm('Are you sure you want to delete this category?')">
+                    <button type="submit" class="btn btn-danger">🗑️ Delete</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.transaction_count }}</div>
+                <div>Total Transactions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.total_amount | currency }}</div>
+                <div>Total Amount</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.avg_amount | currency }}</div>
+                <div>Average Amount</div>
+            </div>
+            {% if category.monthly_budget %}
+            <div class="stat-card">
+                <div class="stat-number">{{ category.monthly_budget | currency }}</div>
+                <div>Monthly Budget</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Transactions -->
+        <h3>📊 Transactions ({{ stats.transaction_count }})</h3>
+
+        {% if transactions.items %}
+            {% for tx in transactions.items %}
+            <div class="transaction">
+                <div>
+                    <strong>{{ tx.description }}</strong><br>
+                    <small style="color: #666;">{{ tx.date | date_uk }} • {{ tx.source.name if tx.source else 'Unknown' }}</small>
+                </div>
+                <div class="tx-amount {% if tx.amount > 0 %}amount-positive{% else %}amount-negative{% endif %}">
+                    {{ tx.amount | currency }}
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- Pagination -->
+            {% if transactions.pages > 1 %}
+            <div class="pagination">
+                {% if transactions.has_prev %}
+                    <a href="{{ url_for('view_category', id=category.id, page=transactions.prev_num) }}">&laquo; Previous</a>
+                {% endif %}
+
+                {% for page_num in transactions.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num != transactions.page %}
+                            <a href="{{ url_for('view_category', id=category.id, page=page_num) }}">{{ page_num }}</a>
+                        {% else %}
+                            <span style="padding: 8px 12px; background: #28a745; color: white; border-radius: 4px;">{{ page_num }}</span>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+
+                {% if transactions.has_next %}
+                    <a href="{{ url_for('view_category', id=category.id, page=transactions.next_num) }}">Next &raquo;</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        {% else %}
+            <div style="text-align: center; padding: 40px; color: #666;">
+                <h4>No transactions in this category yet</h4>
+                <p>Transactions will appear here when they're assigned to this category.</p>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
