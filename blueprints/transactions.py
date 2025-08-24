@@ -21,9 +21,7 @@ def list_transactions():
     search_query = request.args.get("search", "")
 
     try:
-        from models import Transaction, Category
-
-        db = current_app.db
+        from app import db, Transaction, Category
 
         query = Transaction.query.join(
             Category, Transaction.category_id == Category.id, isouter=True
@@ -32,8 +30,9 @@ def list_transactions():
             query = query.filter(Transaction.category_id == category_filter)
         if search_query:
             search_param = f"%{search_query}%"
+            from sqlalchemy import or_
             query = query.filter(
-                db.or_(
+                or_(
                     Transaction.description.like(search_param),
                     getattr(Transaction, "reference", "").like(search_param),
                 )
@@ -82,7 +81,7 @@ def import_transactions():
                 flash(f"Error importing file: {e}", "error")
         else:
             flash("Please select a CSV file", "error")
-    return render_template("import.html")
+    return render_template("transactions/import.html")
 
 
 @transactions_bp.route("/categorize")
@@ -143,7 +142,7 @@ def categorize():
         grouped = current_app.transaction_helper.group_transactions_by_description(
             items
         )
-        from models import Category
+        from app import Category
 
         categories_list = Category.query.order_by(Category.name).all()
         return render_template(
@@ -168,7 +167,7 @@ def update_category(transaction_id):
             transaction_id, category_id
         )
         if transaction and category_id:
-            from models import Transaction
+            from app import Transaction
 
             similar_count = Transaction.query.filter(
                 current_app.db.func.lower(Transaction.description)
@@ -205,8 +204,7 @@ def apply_same():
         category_id = data.get("category_id")
         if not category_id or (not transaction_id and not transaction_ids):
             return jsonify({"error": "Missing parameters"}), 400
-        from models import Transaction
-
+        from app import Transaction
         src_ids = []
         if transaction_ids:
             src_ids = [int(i) for i in transaction_ids if i]

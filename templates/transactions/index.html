@@ -1,0 +1,148 @@
+<!-- templates/transactions/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transactions - Banking App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <div class="transactions-header">
+            <h1>📊 All Transactions</h1>
+            <p>Your complete transaction history</p>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="nav">
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('users') }}">Users & Accounts</a>
+            <a href="/transactions" class="active">Transactions</a>
+            <a href="/categories">Categories</a>
+            <a href="/open-banking">Open Banking</a>
+        </nav>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="flash success">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Transaction Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ transactions.total }}</div>
+                <div class="stat-label">Total Transactions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ transactions.page }}</div>
+                <div class="stat-label">Current Page</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ transactions.pages }}</div>
+                <div class="stat-label">Total Pages</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ transactions.per_page }}</div>
+                <div class="stat-label">Per Page</div>
+            </div>
+        </div>
+
+        <!-- Transaction Filters and Actions -->
+        <div class="content-card mb-3">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                    <h4 style="margin: 0; color: var(--text-primary);">Manage Transactions</h4>
+                    <p style="margin: 0.5rem 0 0 0; color: var(--text-secondary); font-size: 0.9rem;">
+                        Import, export, and manage your transaction data
+                    </p>
+                </div>
+                <div class="quick-actions">
+                    <a href="/transactions/import" class="btn btn-primary">
+                        📁 Import CSV
+                    </a>
+                    <a href="/transactions/add" class="btn btn-success">
+                        ➕ Add Transaction
+                    </a>
+                    <a href="/transactions/export" class="btn btn-info">
+                        📤 Export CSV
+                    </a>
+                    <a href="/transactions/bulk-edit" class="btn btn-warning">
+                        ✏️ Bulk Edit
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transactions Content -->
+        <div class="content-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="margin: 0;">Transaction History</h3>
+                <div style="color: var(--text-secondary); font-size: 0.9rem;">
+                    Showing {{ transactions.items|length }} of {{ transactions.total }} transactions
+                </div>
+            </div>
+
+            {% if transactions.items %}
+                <!-- Transaction List -->
+                {% for tx in transactions.items %}
+                <div class="transaction">
+                    <div class="tx-info">
+                        <div class="tx-desc">{{ tx.description }}</div>
+                        <div class="tx-meta">
+                            {{ tx.date | date_uk }} •
+                            {{ tx.source.name if tx.source else 'Unknown Source' }}
+                            {% if tx.category %}
+                                <span class="category-tag" style="background-color: {{ tx.category.color }}20; color: {{ tx.category.color }};">
+                                    {{ tx.category.name }}
+                                </span>
+                            {% else %}
+                                <span class="category-tag">Uncategorized</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="tx-amount {% if tx.amount > 0 %}amount-positive{% else %}amount-negative{% endif %}">
+                        {{ tx.amount | currency }}
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- Pagination -->
+                {% if transactions.pages > 1 %}
+                <div class="pagination">
+                    {% if transactions.has_prev %}
+                        <a href="{{ url_for('transactions', page=transactions.prev_num) }}">&laquo; Previous</a>
+                    {% endif %}
+
+                    {% for page_num in transactions.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != transactions.page %}
+                                <a href="{{ url_for('transactions', page=page_num) }}">{{ page_num }}</a>
+                            {% else %}
+                                <span class="current">{{ page_num }}</span>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if transactions.has_next %}
+                        <a href="{{ url_for('transactions', page=transactions.next_num) }}">Next &raquo;</a>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+            {% else %}
+                <div class="empty-state">
+                    <h3>No transactions found</h3>
+                    <p>Your transaction data will appear here.</p>
+                    <a href="{{ url_for('add_user') }}" class="btn btn-success">Add First User</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
