@@ -1,309 +1,27 @@
-<!-- templates/dashboard.html - FIXED VERSION -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banking Dashboard</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; line-height: 1.6; }
+{% extends "base.html" %}
 
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
-        .header p { opacity: 0.9; font-size: 1.1rem; }
+{% block title %}Banking Dashboard{% endblock %}
 
-        .container { max-width: 1400px; margin: 0 auto; padding: 2rem 1rem; }
+{% block extra_head %}{% endblock %}
 
-        .nav { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
-        .nav a {
-            padding: 0.75rem 1.5rem;
-            background: white;
-            color: #667eea;
-            text-decoration: none;
-            border-radius: 10px;
-            font-weight: 600;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-        }
-        .nav a:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
-        .nav a.active { background: #667eea; color: white; }
-
-        .balance-projection {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 2rem;
-            border-radius: 15px;
-            margin-bottom: 2rem;
-            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
-        }
-
-        .projection-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-top: 1.5rem;
-        }
-
-        .projection-card {
-            background: rgba(255,255,255,0.1);
-            padding: 1.5rem;
-            border-radius: 12px;
-            backdrop-filter: blur(10px);
-            text-align: center;
-        }
-
-        .projection-number {
-            font-size: 1.8rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-        }
-
-        .projection-label {
-            font-size: 0.9rem;
-            opacity: 0.9;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .accounts-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .account-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            border-left: 5px solid #667eea;
-        }
-
-        .account-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-
-        .account-name {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #2c3e50;
-        }
-
-        .account-type {
-            background: #ecf0f1;
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            color: #7f8c8d;
-            text-transform: capitalize;
-        }
-
-        .balance-display {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #27ae60;
-            margin: 1rem 0;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-        }
-
-        .stat-number {
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-label {
-            color: #7f8c8d;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .content-section {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 2rem;
-            margin-top: 2rem;
-        }
-
-        .content-card {
-            background: white;
-            border-radius: 15px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        }
-
-        .content-card h3 {
-            margin-top: 0;
-            margin-bottom: 1.5rem;
-            color: #2c3e50;
-            font-size: 1.3rem;
-        }
-
-        .transaction-list {
-            list-style: none;
-        }
-
-        .transaction-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem 0;
-            border-bottom: 1px solid #ecf0f1;
-        }
-
-        .transaction-item:last-child {
-            border-bottom: none;
-        }
-
-        .transaction-info {
-            flex: 1;
-        }
-
-        .transaction-desc {
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 0.25rem;
-        }
-
-        .transaction-meta {
-            font-size: 0.85rem;
-            color: #7f8c8d;
-        }
-
-        .transaction-amount {
-            font-weight: bold;
-            font-size: 1.1rem;
-        }
-
-        .amount-positive { color: #27ae60; }
-        .amount-negative { color: #e74c3c; }
-
-        .category-tag {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            margin-left: 0.5rem;
-        }
-
-        .quick-actions {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1.5rem;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .btn-primary {
-            background: #667eea;
-            color: white;
-        }
-
-        .btn-success {
-            background: #27ae60;
-            color: white;
-        }
-
-        .btn-info {
-            background: #3498db;
-            color: white;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-        }
-
-        @media (max-width: 768px) {
-            .content-section {
-                grid-template-columns: 1fr;
-            }
-
-            .projection-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-
-            .header h1 {
-                font-size: 2rem;
-            }
-        }
-
-        .flash {
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border-radius: 8px;
-            font-weight: 500;
-        }
-
-        .flash.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .flash.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <div class="container">
-            <h1>🏦 Your Banking Dashboard</h1>
-            <p>Manage your finances with confidence and forward planning</p>
-        </div>
-    </div>
-
+{% block content %}
     <div class="container">
-        <!-- Flash messages -->
+        <!-- Header Section -->
+    <div class="header">
+            <div>
+                <h1>🏦 Your Banking Dashboard</h1>
+                <p>Manage your finances with confidence and forward planning</p>
+            </div>
+            <div class="header-actions">
+                <a href="{{ url_for('users') }}" class="btn btn-outline">Users & Accounts</a>
+                <a href="/transactions" class="btn btn-outline">Transactions</a>
+                <a href="/categories" class="btn btn-outline">Categories</a>
+                <a href="/open-banking" class="btn btn-outline">Open Banking</a>
+                <a href="{{ url_for('add_user') }}" class="btn btn-success">Add User</a>
+            </div>
+        </div>
+
+        <!-- Flash Messages -->
         {% with messages = get_flashed_messages() %}
             {% if messages %}
                 {% for message in messages %}
@@ -311,16 +29,6 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
-
-        <!-- Navigation -->
-        <div class="nav">
-            <a href="{{ url_for('dashboard') }}" class="active">Dashboard</a>
-            <a href="{{ url_for('users') }}">Users & Accounts</a>
-            <a href="/transactions">Transactions</a>
-            <a href="/categories">Categories</a>
-            <a href="/open-banking">Open Banking</a>
-            <a href="{{ url_for('add_user') }}">Add User</a>
-        </div>
 
         <!-- Balance Projection Card -->
         {% if projected_balance %}
@@ -362,21 +70,21 @@
                         <div class="account-type">{{ account.account_type }}</div>
                     </div>
                     {% if account.user %}
-                    <div style="text-align: right;">
-                        <div style="font-weight: 600;">{{ account.user.full_name }}</div>
-                        <div style="font-size: 0.85rem; color: #7f8c8d;">{{ account.user.email }}</div>
+                    <div class="text-right">
+                        <div class="font-weight-bold">{{ account.user.full_name }}</div>
+                        <div class="account-user-email">{{ account.user.email }}</div>
                     </div>
                     {% endif %}
                 </div>
 
-                <div class="balance-display">{{ account.live_balance | currency }}</div>
+                <div class="balance-display">{{ account.current_balance | currency }}</div>
 
                 {% set opening_balance = account.opening_balance | float %}
-                {% set current_balance = account.live_balance | float %}
+                {% set current_balance = account.current_balance | float %}
                 {% set balance_change = current_balance - opening_balance %}
 
                 {% if balance_change != 0 %}
-                <div style="font-size: 0.9rem; color: #7f8c8d;">
+                <div class="account-user-email">
                     Opening: {{ opening_balance | currency }} |
                     Change: <span class="{% if balance_change > 0 %}amount-positive{% else %}amount-negative{% endif %}">
                         {% if balance_change > 0 %}+{% endif %}{{ balance_change | currency }}
@@ -465,7 +173,7 @@
                             <div class="transaction-meta">{{ count }} transactions</div>
                         </div>
                         <div class="transaction-amount">
-                            <span style="color: {{ color or '#667eea' }};">{{ total | currency }}</span>
+                            <span style="color: {{ color or 'var(--primary-color)' }};">{{ total | currency }}</span>
                         </div>
                     </li>
                     {% endfor %}
@@ -486,7 +194,7 @@
         </div>
 
         <!-- Quick Actions Bar -->
-        <div class="content-card" style="margin-top: 2rem;">
+        <div class="content-card mt-5">
             <h3>⚡ Quick Actions</h3>
             <div class="quick-actions">
                 <a href="{{ url_for('add_user') }}" class="btn btn-success">
@@ -507,5 +215,4 @@
             </div>
         </div>
     </div>
-</body>
-</html>
+{% endblock %}

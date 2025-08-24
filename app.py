@@ -7,6 +7,7 @@ for managing users, accounts, transactions, and categories.
 """
 
 import os
+from dotenv import load_dotenv
 from datetime import date, datetime, timedelta
 
 import pytz
@@ -15,6 +16,9 @@ from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
+from sqlalchemy.orm import joinedload
+
+load_dotenv()
 # Initialize Flask app
 app = Flask(__name__)
 
@@ -56,7 +60,11 @@ class User(db.Model):
     is_active = db.Column(db.Boolean, default=True)
 
     # Relationships
-    accounts = db.relationship("Account", backref="user", lazy="dynamic")
+    accounts = db.relationship(
+        "Account",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
 
     @property
     def full_name(self):
@@ -162,6 +170,8 @@ class Account(db.Model):
     bank_connection_id = db.Column(db.String(255))
     external_account_id = db.Column(db.String(255))
 
+    user = db.relationship("User", back_populates="accounts")
+
     def get_live_balance(self):
         """Calculate current balance on-the-fly based on opening balance + transactions"""
         total_transactions = (
@@ -227,13 +237,26 @@ def calculate_projected_balance_2_weeks():
 @app.route("/")
 def dashboard():
     """Main dashboard"""
-    # Get user accounts and balances
     accounts = Account.query.filter_by(is_active=True).all()
 
-    # Calculate current balances
+    # Efficiently calculate all account balances to avoid the N+1 query problem.
+    # Instead of one query per account, we fetch all transaction sums at once.
+    account_ids = [acc.id for acc in accounts]
+    transaction_sums = {}
+    if account_ids:
+        transaction_sums = dict(
+            db.session.query(Transaction.account_id, db.func.sum(Transaction.amount))
+            .filter(Transaction.account_id.in_(account_ids))
+            .group_by(Transaction.account_id)
+            .all()
+        )
+
     total_balance = 0
     for account in accounts:
-        account.live_balance = account.get_live_balance()
+        total_transactions = transaction_sums.get(account.id, 0)
+        account.live_balance = float(account.opening_balance or 0) + float(
+            total_transactions or 0
+        )
         total_balance += account.live_balance
 
     # Get transaction statistics
@@ -274,7 +297,33 @@ def dashboard():
 @app.route("/users")
 def users():
     """User management page"""
-    user_list = User.query.order_by(User.created_at.desc()).all()
+    # Eagerly load accounts using joinedload to prevent N+1 query problems
+    # that would occur when accessing user.accounts in the template.
+    user_list = (
+        User.query.options(joinedload(User.accounts))
+        .order_by(User.created_at.desc())
+        .all()
+    )
+
+    # To calculate balances efficiently and fix the 'no attribute balance' error,
+    # we first get all transaction sums in a single, separate query.
+    transaction_sums = dict(
+        db.session.query(Transaction.account_id, db.func.sum(Transaction.amount))
+        .filter(Transaction.account_id.isnot(None))
+        .group_by(Transaction.account_id)
+        .all()
+    )
+
+    # Now, iterate through the pre-loaded accounts and attach the calculated balance.
+    # This avoids running a new query for every single account.
+    for user in user_list:
+        for account in user.accounts:
+            total_transactions = transaction_sums.get(account.id, 0)
+            # The template expects a 'balance' attribute, so we create it dynamically.
+            account.balance = float(account.opening_balance or 0) + float(
+                total_transactions or 0
+            )
+
     return render_template("users.html", users=user_list)
 
 
@@ -327,11 +376,10 @@ def add_user():
                 db.session.add(opening_transaction)
 
             db.session.commit()
-            flash("""
-                f"User {user.full_name}
-                  created successfully with opening balance of
-                  £{opening_balance:.2f}!"
-            """)
+            flash(
+                f"User {user.full_name} created successfully with opening balance of "
+                f"£{opening_balance:.2f}!"
+            )
             return redirect(url_for("users"))
 
         except IntegrityError:
@@ -365,35 +413,36 @@ def transactions():
 @app.route("/categories")
 def categories():
     """Categories management page"""
+    # Get all transaction stats in a single query to avoid the N+1 problem.
+    # This is much more efficient than querying inside a loop.
+    transaction_stats = {
+        cat_id: (count, total)
+        for cat_id, count, total in db.session.query(
+            Transaction.category_id,
+            db.func.count(Transaction.id),
+            db.func.sum(Transaction.amount),
+        )
+        .filter(Transaction.category_id.isnot(None))
+        .group_by(Transaction.category_id)
+        .all()
+    }
+
     category_list = Category.query.order_by(Category.type, Category.name).all()
 
     # Group by type and add statistics
     income_categories = []
     expense_categories = []
-
     for cat in category_list:
-        # Count transactions for this category
-        transaction_count = Transaction.query.filter_by(category_id=cat.id).count()
-
-        # Calculate total amount for this category
-        total_amount = (
-            db.session.query(db.func.sum(Transaction.amount))
-            .filter(Transaction.category_id == cat.id)
-            .scalar()
-            or 0
-        )
-
-        # Add stats to category object
-        cat.transaction_count = transaction_count
-        cat.total_amount = float(total_amount)
-
+        count, total = transaction_stats.get(cat.id, (0, 0))
+        cat.transaction_count = count
+        cat.total_amount = float(total or 0)
         if cat.type == "income":
             income_categories.append(cat)
         else:
             expense_categories.append(cat)
 
     return render_template(
-        "categories/index.html",
+        "categories/list_categories.html",
         income_categories=income_categories,
         expense_categories=expense_categories,
         total_categories=len(category_list),

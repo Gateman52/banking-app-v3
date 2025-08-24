@@ -1,448 +1,72 @@
-<!-- templates/users.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Management</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; }
+{% extends "base.html" %}
 
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2rem; }
-        .header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+{% block title %}Users & Accounts - Banking App{% endblock %}
 
-        .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1rem; }
+{% block extra_head %}
+{% endblock %}
 
-        .nav { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
-        .nav a {
-            padding: 0.75rem 1.5rem;
-            background: white;
-            color: #667eea;
-            text-decoration: none;
-            border-radius: 10px;
-            font-weight: 600;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .nav a.active { background: #667eea; color: white; }
-
-        .users-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem; }
-
-        .user-card {
-            background: white;
-            border-radius: 15px;
-            padding: 2rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            position: relative;
-            border-left: 5px solid #667eea;
-        }
-
-        .user-header {
-            display: flex;
-            justify-content: between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .user-info h3 {
-            color: #2c3e50;
-            font-size: 1.3rem;
-            margin-bottom: 0.25rem;
-        }
-
-        .user-meta {
-            color: #7f8c8d;
-            font-size: 0.9rem;
-        }
-
-        .accounts-summary {
-            margin: 1.5rem 0;
-        }
-
-        .account-item {
-            display: flex;
-            justify-content: between;
-            align-items: center;
-            padding: 0.75rem;
-            background: #f8f9fa;
-            border-radius: 8px;
-            margin-bottom: 0.5rem;
-        }
-
-        .account-name {
-            font-weight: 600;
-            color: #2c3e50;
-        }
-
-        .account-balance {
-            font-weight: bold;
-            color: #27ae60;
-        }
-
-        .user-actions {
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 1.5rem;
-        }
-
-        .btn {
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 6px;
-            font-weight: 500;
-            text-decoration: none;
-            display: inline-block;
-            cursor: pointer;
-            font-size: 0.9rem;
-        }
-
-        .btn-primary { background: #3498db; color: white; }
-        .btn-success { background: #27ae60; color: white; }
-        .btn-warning { background: #f39c12; color: white; }
-
-        .total-balance {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #27ae60;
-            margin-top: 1rem;
-        }
-
-        .add-user-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            font-size: 1.2rem;
-            font-weight: 600;
-            transition: transform 0.3s ease;
-        }
-
-        .add-user-card:hover {
-            transform: translateY(-5px);
-            color: white;
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <div class="container">
-            <h1>👥 User Management</h1>
-            <p>Manage user accounts and opening balances</p>
+{% block content %}
+    <div class="users-container">
+        <!-- Header Section -->
+        <div class="users-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="users-header">
+            <div>
+                <h1>👥 Users & Accounts</h1>
+            </div>
+            <div class="header-actions">
+                <a href="{{ url_for('add_user') }}" class="btn btn-success">👤 Add New User</a>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline">🏠 Dashboard</a>
+            </div>
         </div>
-    </div>
-
-    <div class="container">
-        <div class="nav">
-            <a href="{{ url_for('dashboard') }}">Dashboard</a>
-            <a href="{{ url_for('users') }}" class="active">Users & Accounts</a>
-            <a href="/transactions">Transactions</a>
-            <a href="/categories">Categories</a>
-        </div>
-
-        <div class="users-grid">
-            <!-- Add User Card -->
-            <a href="{{ url_for('add_user') }}" class="user-card add-user-card">
-                <div style="text-align: center;">
-                    <div style="font-size: 3rem; margin-bottom: 1rem;">➕</div>
-                    <div>Add New User</div>
-                </div>
-            </a>
-
-            <!-- User Cards -->
-            {% for user in users %}
-            <div class="user-card">
-                <div class="user-info">
-                    <h3>{{ user.full_name }}</h3>
-                    <div class="user-meta">
-                        @{{ user.username }} • {{ user.email }}<br>
-                        Joined: {{ user.created_at | date_uk }}
-                    </div>
-                </div>
-
-                {% if user.accounts %}
-                <div class="accounts-summary">
-                    <h4 style="color: #2c3e50; margin-bottom: 1rem;">Accounts:</h4>
-                    {% set total_balance = 0 %}
-                    {% for account in user.accounts %}
-                    <div class="account-item">
-                        <div>
-                            <div class="account-name">{{ account.account_name }}</div>
-                            <div style="font-size: 0.85rem; color: #7f8c8d;">{{ account.account_type.title() }}</div>
-                        </div>
-                        <div class="account-balance">{{ account.current_balance | currency }}</div>
-                    </div>
-                    {% set total_balance = total_balance + account.current_balance %}
-                    {% endfor %}
-
-                    <div class="total-balance">
-                        Total: {{ total_balance | currency }}
-                    </div>
-                </div>
-                {% else %}
-                <div class="accounts-summary">
-                    <p style="color: #7f8c8d; font-style: italic;">No accounts yet</p>
-                </div>
-                {% endif %}
-
-                <div class="user-actions">
-                    <a href="/accounts/add?user_id={{ user.id }}" class="btn btn-success">Add Account</a>
-                    <a href="/users/{{ user.id }}/edit" class="btn btn-primary">Edit User</a>
-                    <a href="/transactions?user_id={{ user.id }}" class="btn btn-warning">View Transactions</a>
+        <!-- User Actions and User List go here -->
+        {# ...existing user list and actions code... #}
+        {% for user in users %}
+        <div class="user-card">
+            <div class="user-info">
+                <div class="user-name">{{ user.first_name }} {{ user.last_name }}</div>
+                <div class="user-meta">Username: {{ user.username }}</div>
+                <div class="user-meta">Email: {{ user.email }}</div>
+                <div class="user-status {% if user.active %}status-active{% else %}status-inactive{% endif %}">
+                    {% if user.active %}Active{% else %}Inactive{% endif %}
                 </div>
             </div>
-            {% endfor %}
-        </div>
-    </div>
-</body>
-</html>
-
-<!-- templates/add_user.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add New User</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; }
-
-        .header { background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%); color: white; padding: 2rem; }
-        .header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
-
-        .container { max-width: 600px; margin: 2rem auto; padding: 0 1rem; }
-
-        .form-card {
-            background: white;
-            border-radius: 15px;
-            padding: 2rem;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: #2c3e50;
-        }
-
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 0.75rem;
-            border: 2px solid #ecf0f1;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: border-color 0.3s ease;
-        }
-
-        .form-group input:focus, .form-group select:focus {
-            outline: none;
-            border-color: #27ae60;
-            box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-
-        .balance-section {
-            background: #f8f9fa;
-            padding: 1.5rem;
-            border-radius: 10px;
-            margin: 1.5rem 0;
-        }
-
-        .balance-section h3 {
-            color: #27ae60;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .balance-info {
-            background: #e8f5e8;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-top: 1rem;
-            border-left: 4px solid #27ae60;
-        }
-
-        .balance-info p {
-            margin: 0.25rem 0;
-            color: #2c3e50;
-        }
-
-        .btn-section {
-            display: flex;
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-
-        .btn {
-            flex: 1;
-            padding: 1rem;
-            border: none;
-            border-radius: 10px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-            text-align: center;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
-            color: white;
-        }
-
-        .btn-secondary {
-            background: #ecf0f1;
-            color: #7f8c8d;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        }
-
-        .flash {
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border-radius: 8px;
-            font-weight: 500;
-        }
-
-        .flash.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .flash.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-
-        .help-text {
-            font-size: 0.85rem;
-            color: #7f8c8d;
-            margin-top: 0.5rem;
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <div class="container">
-            <h1>➕ Add New User</h1>
-            <p>Create a new user account with initial balance</p>
-        </div>
-    </div>
-
-    <div class="container">
-        <!-- Flash messages -->
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="flash error">{{ message }}</div>
+            <div class="accounts-section">
+                <div class="accounts-header">
+                    Accounts
+                    <span class="account-count">{{ user.accounts|length }}</span>
+                </div>
+                {% for account in user.accounts %}
+                <div class="account-item account-{{ account.account_type }}">
+                    <div class="account-details">
+                        <div class="account-name">{{ account.name }}</div>
+                        <div class="account-type">{{ account.account_type }}</div>
+                    </div>
+                    <div class="account-balance balance-{{ 'positive' if account.balance > 0 else 'negative' if account.balance < 0 else 'zero' }}">
+                        £{{ '%.2f'|format(account.balance) }}
+                    </div>
+                </div>
                 {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        <div class="form-card">
-            <form method="POST" id="userForm">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="first_name">First Name *</label>
-                        <input type="text" id="first_name" name="first_name" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="last_name">Last Name *</label>
-                        <input type="text" id="last_name" name="last_name" required>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="username">Username *</label>
-                    <input type="text" id="username" name="username" required>
-                    <div class="help-text">Must be unique. Used for login and identification.</div>
-                </div>
-
-                <div class="form-group">
-                    <label for="email">Email Address *</label>
-                    <input type="email" id="email" name="email" required>
-                    <div class="help-text">We'll use this for important account notifications.</div>
-                </div>
-
-                <div class="balance-section">
-                    <h3>💰 Initial Account Setup</h3>
-
-                    <div class="form-group">
-                        <label for="opening_balance">Opening Balance (£) *</label>
-                        <input type="number" id="opening_balance" name="opening_balance" step="0.01" value="0.00" min="0">
-                        <div class="help-text">This will be the starting balance for the user's primary current account.</div>
-                    </div>
-
-                    <div class="balance-info">
-                        <p><strong>What happens when you create this user:</strong></p>
-                        <p>✅ A new user account will be created</p>
-                        <p>✅ A primary current account will be set up</p>
-                        <p>✅ If opening balance > £0, an "Opening Balance" transaction will be recorded</p>
-                        <p>✅ The user will be ready for transaction tracking and Open Banking connections</p>
-                    </div>
-                </div>
-
-                <div class="btn-section">
-                    <button type="submit" class="btn btn-primary">
-                        👤 Create User & Account
-                    </button>
-                    <a href="{{ url_for('users') }}" class="btn btn-secondary">
-                        Cancel
-                    </a>
-                </div>
-            </form>
+            </div>
+            <div class="user-actions">
+                <a href="/accounts/add?user_id={{ user.id }}" class="btn btn-success">💳 Add Account</a>
+                <a href="/users/{{ user.id }}/edit" class="btn btn-primary">✏️ Edit User</a>
+                <a href="/transactions?user_id={{ user.id }}" class="btn btn-info">📊 Transactions</a>
+                {% if user.accounts|length > 1 %}
+                <a href="/accounts/transfer?user_id={{ user.id }}" class="btn btn-warning">💸 Transfer</a>
+                {% endif %}
+                <a href="/users/{{ user.id }}/details" class="btn btn-outline">👁️ Details</a>
+            </div>
         </div>
+        {% endfor %}
+        {% if users|length == 0 %}
+        <!-- Empty State -->
+        <div class="full-width-row">
+            <div class="empty-state">
+                <h3>No users yet</h3>
+                <p>Create your first user to start managing accounts and transactions.</p>
+                <a href="{{ url_for('add_user') }}" class="btn btn-success btn-large">👤 Create First User</a>
+            </div>
+        </div>
+        {% endif %}
     </div>
-
-    <script>
-        // Auto-generate username from first and last name
-        document.getElementById('first_name').addEventListener('input', updateUsername);
-        document.getElementById('last_name').addEventListener('input', updateUsername);
-
-        function updateUsername() {
-            const firstName = document.getElementById('first_name').value.toLowerCase();
-            const lastName = document.getElementById('last_name').value.toLowerCase();
-            const username = document.getElementById('username');
-
-            if (firstName && lastName && !username.value) {
-                username.value = firstName + '.' + lastName;
-            }
-        }
-
-        // Preview opening balance
-        document.getElementById('opening_balance').addEventListener('input', function() {
-            const balance = parseFloat(this.value) || 0;
-            const info = document.querySelector('.balance-info');
-
-            if (balance > 0) {
-                info.innerHTML = `
-                    <p><strong>What happens when you create this user:</strong></p>
-                    <p>✅ A new user account will be created</p>
-                    <p>✅ A primary current account will be set up with £${balance.toFixed(2)}</p>
-                    <p>✅ An "Opening Balance" transaction of £${balance.toFixed(2)} will be recorded</p>
-                    <p>✅ The user will be ready for transaction tracking and Open Banking connections</p>
-                `;
-            } else {
-                info.innerHTML = `
-                    <p><strong>What happens when you create this user:</strong></p>
-                    <p>✅ A new user account will be created</p>
-                    <p>✅ A primary current account will be set up with £0.00</p>
-                    <p>✅ No opening balance transaction (account starts at zero)</p>
-                    <p>✅ The user will be ready for transaction tracking and Open Banking connections</p>
-                `;
-            }
-        });
-    </script>
-</body>
-</html>
+{% endblock %}

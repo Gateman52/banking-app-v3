@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Categories{% endblock %}
+
+{% block content %}
+    <div class="header">
+        <h1>📁 Categories</h1>
+        <p>Manage your transaction categories</p>
+    </div>
+
+    <div class="nav">
+        <a href="/">Dashboard</a>
+        <a href="/users">Users</a>
+        <a href="/add-user">Add User</a>
+        <a href="/transactions">Transactions</a>
+    </div>
+
+    <div class="summary">
+        <strong>Total Categories:</strong> {{ total_categories }}
+    </div>
+
+    <div class="categories-grid">
+        <div class="category-section income-section">
+            <h3>Income Categories</h3>
+            {% for category in income_categories %}
+            <div class="category-item income-item">
+                <div class="category-header">
+                    <span class="category-color" style="background-color: {{ category.color or '#28a745' }};"></span>
+                    <span class="category-name">{{ category.name }}</span>
+                    <span class="category-stats">
+                        {{ category.transaction_count }} transactions | £{{ category.total_amount | round(2) }}
+                    </span>
+                </div>
+                {% if category.description %}
+                <div class="category-description">{{ category.description }}</div>
+                {% endif %}
+                <div class="category-actions">
+                    <a href="/categories/{{ category.id }}/edit">Edit</a>
+                    <a href="/categories/{{ category.id }}">View</a>
+                </div>
+            </div>
+            {% else %}
+                <p class="category-empty">No income categories yet.</p>
+            {% endfor %}
+        </div>
+        <div class="category-section expense-section">
+            <h3>Expense Categories</h3>
+            {% for category in expense_categories %}
+            <div class="category-item expense-item">
+                <div class="category-header">
+                    <span class="category-color" style="background-color: {{ category.color or '#dc3545' }};"></span>
+                    <span class="category-name">{{ category.name }}</span>
+                    <span class="category-stats">
+                        {{ category.transaction_count }} transactions | £{{ category.total_amount | round(2) }}
+                    </span>
+                </div>
+                {% if category.description %}
+                <div class="category-description">{{ category.description }}</div>
+                {% endif %}
+                <div class="category-actions">
+                    <a href="/categories/{{ category.id }}/edit">Edit</a>
+                    <a href="/categories/{{ category.id }}">View</a>
+                </div>
+            </div>
+            {% else %}
+                <p class="category-empty">No expense categories yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+    <a href="/categories/add" class="add-category-btn">➕ Add Category</a>
+{% endblock %}
